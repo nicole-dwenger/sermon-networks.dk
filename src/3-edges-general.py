@@ -59,23 +59,31 @@ def create_edgelist_from(pairs):
 Apply functions
 """
 
+# Argument Prser
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--entity_class', type=str, required=False,
                     default="LOC",
                     help='DaCy Named Entitiy Tag to extract. Defaults to LOC')
 
+parser.add_argument('--token_form', type=str, required=False,
+                    default="lemma",
+                    help="Whether tokens should be lemmatised or kept in their original form")
+
 args = parser.parse_args()
 entity_class = args.entity_class
+token_form = args.token_form
+
 
 # Read data
-data = pd.read_csv(os.path.join("data", f"content_{entity_class}_dacy.dat"))
+data = pd.read_csv(os.path.join("data", f"content_{entity_class}_{token_form}_dacy.dat"))
 # Group by sermon
 grouped = pd.DataFrame(data.groupby("fname")[entity_class].apply(lambda x: x.str.cat(sep=',')))
 # Create edgelist
 final_edges = create_edgelist_from(create_pairs(grouped, entity_class))
 # Save final edgelist
-final_edges.to_csv(os.path.join("output", f"all_edges_{entity_class}_dacy.csv"),  sep=",", index=False, header=True)
+final_edges.to_csv(os.path.join("output", f"all_edges_{entity_class}_{token_form}_dacy.csv"),  sep=",", index=False, header=True)
 
 
 # # Read data

@@ -25,9 +25,14 @@ if __name__ == "__main__":
     parser.add_argument('--entity_class', type=str, required=False,
                         default="LOC",
                         help='DaCy Named Entitiy Tag to extract. Defaults to LOC')
+    
+    parser.add_argument('--token_form', type=str, required=False,
+                        default="lemma",
+                        help="Whether tokens should be lemmatised or kept in their original form")
 
     args = parser.parse_args()
     entity_class = args.entity_class
+    token_form = args.token_form
 
     """
     First processing to create NER outputs
@@ -51,7 +56,7 @@ if __name__ == "__main__":
         text_entities = []
         # extract entities from sentences
         for sent in sentences:
-            text_entities.append([(ent.text, ent.label_) for ent in nlp(sent).ents])
+            text_entities.append([(ent.text, ent.lemma_, ent.label_) for ent in nlp(sent).ents])
             #if textblob.entities:
             #    text_entities.append(textblob.entities)
         entity_list.append([fnames[i],text_entities])
@@ -66,13 +71,15 @@ if __name__ == "__main__":
     """
     entities = df_ner["NE"].tolist()
     fname = df_ner["id"]
-
+    # Define index in tuple for either lemma (1) or text (0)
+    token_index = 1 if token_form == "lemma" else 0
+    
     out = []
     for i, doc in enumerate(entities):
         for ii, sent in enumerate(doc):
             if sent:
                 for entity in sent:
-                    if entity[1] == entity_class:
+                    if entity[2] == entity_class:
                         out.append([fname[i], ii, entity[0]])
     entitiy_df = pd.DataFrame(out)
     entitiy_df.columns = ["fname","sentence", entity_class]
@@ -81,14 +88,19 @@ if __name__ == "__main__":
     entitiy_df[entity_class] = entitiy_df[entity_class].str.replace('[^\w\s]','', regex=True)
     # To lower
     entitiy_df[entity_class] = entitiy_df[entity_class].str.lower()
-    # Replace any empty cells with Nan; remove NaN
+    # Replace any empty cells with NA; remove Na
     entitiy_df[entity_class].replace('', np.nan, inplace=True)
+    # Replace those that only have an s
+    entitiy_df[entity_class].replace('s', np.nan, inplace=True)
+    # Drop NA
     entitiy_df = entitiy_df.dropna()
+    
+    # Save as csv
+    entitiy_df.to_csv(os.path.join("data",f"content_{entity_class}_{token_form}_dacy.dat"), index = False)
 
     # Stem remaining names with Snowball
     # This is far from perfect but it gets rid of things like possessives
-    entitiy_df[entity_class] = entitiy_df[entity_class].apply(lambda x: stemmer.stem(x))
-    entitiy_df.to_csv(os.path.join("data",f"content_{entity_class}_dacy.dat"), index = False)
+    # entitiy_df[entity_class] = entitiy_df[entity_class].apply(lambda x: stemmer.stem(x))
 
     # """
     # Join with metadata
