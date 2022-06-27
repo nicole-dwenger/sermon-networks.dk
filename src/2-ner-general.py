@@ -10,8 +10,8 @@ import dacy
 nlp = dacy.load("large")
 
 import nltk.data
-from nltk.stem.snowball import DanishStemmer
-stemmer = DanishStemmer()
+#from nltk.stem.snowball import DanishStemmer
+#stemmer = DanishStemmer()
 
 if __name__ == "__main__":
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             if sent:
                 for entity in sent:
                     if entity[2] == entity_class:
-                        out.append([fname[i], ii, entity[0]])
+                        out.append([fname[i], ii, entity[token_index]])
     entitiy_df = pd.DataFrame(out)
     entitiy_df.columns = ["fname","sentence", entity_class]
 
